@@ -1,70 +1,112 @@
-# Getting Started with Create React App
+# recoil 샘플코드 (카운터 구현)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+- recoil > react 상태관리 라이브러리
+- App.js에서 확인가능.
 
-## Available Scripts
+## 결론부터
 
-In the project directory, you can run:
+- 러닝커브가 낮아 빠르게 익힐 수 있고 가볍게 사용하기 좋다.
+- 리액트의 useState와 비슷한 문법으로 인해 적용 쉽다.
+- suspense나 에러 바운더리, 동시성 모드를 지원한다.
+- 캐싱을 지원해 성능 개선에 도움된다.
+- redux와는 다르게 미들웨어없이 쉽게 비동기 로직이 구현된다.
+- 하지만 devtools의 부재로 인해 큰 규모의 프로젝트에 도입하긴 부담스럽다.
 
-### `npm start`
+## 컨셉
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+#### atoms
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Recoil에서 상태의 기본 단위입니다. 읽거나 업데이트할 수 있는 상태를 나타냅니다. 아톰을 생성하려면 atom 함수를 사용하고 고유 키와 기본값을 제공합니다.
 
-### `npm test`
+```
+import { atom } from 'recoil';
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+const counterState = atom({
+  key: 'counterState',
+  default: 0,
+});
+```
 
-### `npm run build`
+#### selector
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+선택자는 다른 아톰이나 선택자의 값을 읽고 이들로부터 새로운 값을 도출할 수 있는 순수 함수입니다. 응용 프로그램의 상태(원자)를 기반으로 파생된 상태를 계산하는 데 사용됩니다.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+import { selector } from 'recoil';
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+const counterDisplay = selector({
+  key: 'counterDisplay',
+  get: ({ get }) => {
+    const count = get(counterState);
+    return `Current Count: ${count}`;
+  },
+});
+```
 
-### `npm run eject`
+#### RecoilRoot
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+RecoilRoot는 애플리케이션 구성 요소 트리의 루트에 추가해야 하는 React 구성 요소입니다. Recoil이 상태를 관리하는 데 필요한 컨텍스트를 제공합니다.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```
+import { RecoilRoot } from 'recoil';
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+function App() {
+  return (
+    <RecoilRoot>
+      {/* Your application components */}
+    </RecoilRoot>
+  );
+}
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+#### Hooks
 
-## Learn More
+Recoil은 구성 요소의 원자 및 선택기와 상호 작용할 수 있는 몇 가지 후크를 제공합니다.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- useRecoilState: 이 훅은 아톰 또는 셀렉터의 현재 값이 있는 튜플과 아톰 값을 업데이트하는 setter 함수를 반환합니다. 이는 React의 useState 후크와 유사하게 작동합니다.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```
+import { useRecoilState } from 'recoil';
 
-### Code Splitting
+function Counter() {
+  const [count, setCount] = useRecoilState(counterState);
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+  // ...
+}
+```
 
-### Analyzing the Bundle Size
+- useRecoilValue: 이 후크는 원자 또는 선택기의 현재 값을 반환합니다. 값을 업데이트하지 않고 읽기만 하면 되는 경우에 사용해야 합니다.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```
+import { useRecoilValue } from 'recoil';
 
-### Making a Progressive Web App
+function CounterDisplay() {
+  const countDisplay = useRecoilValue(counterDisplay);
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+  // ...
+}
+```
 
-### Advanced Configuration
+- useSetRecoilState: 이 후크는 아톰 값을 업데이트하는 setter 함수를 반환합니다. 값을 읽지 않고 업데이트만 하면 되는 경우에 사용해야 합니다.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```
+import { useSetRecoilState } from 'recoil';
 
-### Deployment
+function IncrementButton() {
+  const setCount = useSetRecoilState(counterState);
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+  // ...
+}
+```
 
-### `npm run build` fails to minify
+- useResetRecoilState: 이 후크는 아톰 값을 기본값으로 재설정하는 함수를 반환합니다.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```
+import { useResetRecoilState } from 'recoil';
+
+function ResetButton() {
+  const resetCount = useResetRecoilState(counterState);
+
+  // ...
+}
+```
